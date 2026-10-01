@@ -1,7 +1,7 @@
 # SATTL Lab Inventory Kiosk
 
 An offline Android tablet app that tracks the SATTL lab's equipment and who has it.
-The full build spec is `SPEC.md` (kept alongside this repository by the lab manager).
+The full build spec is [`SPEC.md`](SPEC.md). It always matches the app; see its change log (section 15).
 
 > **Status:** milestone 1 of 6 is done (project skeleton, database, first-time setup,
 > login, Change PIN, auto-logout). The step-by-step guide for non-developers (installing
@@ -41,6 +41,8 @@ app/src/test/            JUnit + Robolectric tests (run on the computer, no tabl
 ## Rules for maintainers
 
 - Business rules are commented with the spec section they implement, e.g. `rule 6.14`.
+- When a rule or decision changes, update `SPEC.md` in the same commit and add a line to its
+  change log (section 15), so the spec never drifts from the app.
 - Never use a destructive database migration. See `data/db/Migrations.kt` for how to
   change the schema without losing data.
 - The app must never request the `INTERNET` permission. The manifest actively strips it.
