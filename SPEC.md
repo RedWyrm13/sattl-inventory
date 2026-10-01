@@ -143,10 +143,10 @@ User enters a new PIN twice. Forced on first login and after a reset. Also reach
 
 ### 5.4 Inventory (home screen)
 
-- A search box filters as you type across SATTL tag, manufacturer, model number, serial number and location.
-- Filter chips: All, Available, Checked out, My checkouts, Not checkoutable. Admin also sees Retired.
+- A search box filters as you type across SATTL tag, manufacturer, model number, serial number and location. "Location" means both the home location and the current location, so searching a room also finds items from that room that are checked out.
+- Filter chips: All, Available, Checked out, My checkouts, Not checkoutable. Admin also sees Retired. All shows every item except retired ones, for the admin too; retired items appear only under Retired. Each filter matches the item's derived status, so a not-checkoutable item that is currently out appears under Checked out. Each chip shows how many items it would show.
 - A list with one row per item, sorted by SATTL tag: tag, manufacturer, model, serial, current location, and a coloured status badge.
-- In the Checked out filter, each row also shows who has it, destination, checkout date and reason.
+- In the Checked out and My checkouts filters, each row also shows who has it, destination, checkout date and reason.
 - An Export this view button (admin only) exports the current filtered, searched list to CSV (section 7).
 - Admin only: Add item button, and an Admin menu (Users, Export / Restore, Settings, Exit kiosk).
 - Tapping a row opens Item detail.
@@ -355,3 +355,6 @@ This spec is kept in sync with the app. When a decision changes or an ambiguity 
 | 2026-10-01 | After a lockout, the failure counter resets, giving 5 fresh attempts. | 5.2, 8 |
 | 2026-10-01 | "New PIN ≠ default PIN" applies only to a forced change. A wrong current PIN on a voluntary change does not count toward the lockout. | 5.3 |
 | 2026-10-01 | The idle warning appears at 1:45, so logout happens at exactly 2:00 of inactivity. | 6.14 |
+| 2026-10-01 | Search matches both home and current location. *Agent's reading; awaiting lab manager confirmation.* | 5.4 |
+| 2026-10-01 | All excludes retired items for the admin too, and filters follow derived status, so a not-checkoutable item that is out shows under Checked out. *Agent's reading; awaiting lab manager confirmation.* | 5.4 |
+| 2026-10-01 | Checkout details also show in the My checkouts filter, not just Checked out. *Agent's reading; awaiting lab manager confirmation.* | 5.4 |
