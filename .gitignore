@@ -1,0 +1,15 @@
+# Gradle / Android Studio
+.gradle/
+build/
+/local.properties
+.idea/
+*.iml
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing keys must NEVER be committed. See README for where the release key is kept.
+*.jks
+*.keystore
+keystore.properties
