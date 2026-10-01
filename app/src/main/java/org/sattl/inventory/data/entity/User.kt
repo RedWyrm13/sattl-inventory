@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.util.UUID
 
 /** Spec section 3: exactly one ADMIN (the lab manager); everyone else is a USER. */
 enum class Role { ADMIN, USER }
@@ -17,10 +18,16 @@ enum class Role { ADMIN, USER }
 @Entity(
     tableName = "users",
     // Rule 6.13: user names are unique, case-insensitive after trimming (NOCASE collation).
-    indices = [Index(value = ["name"], unique = true)],
+    indices = [Index(value = ["name"], unique = true), Index(value = ["uuid"], unique = true)],
 )
 data class User(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /**
+     * Globally unique id for a future sync feature (spec section 2). Generated once when the
+     * row is created, never changed, and included in the full export (spec section 7.1).
+     * [id] stays the local key used by foreign keys on this tablet.
+     */
+    val uuid: String = UUID.randomUUID().toString(),
     @ColumnInfo(collate = ColumnInfo.NOCASE) val name: String,
     val role: Role,
     /** Base64 PBKDF2-HMAC-SHA256 hash of the PIN. */

@@ -19,6 +19,7 @@ import org.sattl.inventory.data.entity.Item
 import org.sattl.inventory.data.entity.Role
 import org.sattl.inventory.data.entity.User
 import java.time.LocalDate
+import java.util.UUID
 
 /** Spec section 4 and rules 6.1 / 6.13: constraints enforced by the database itself. */
 @RunWith(AndroidJUnit4::class)
@@ -102,6 +103,39 @@ class DatabaseConstraintsTest {
         db.userDao().insert(user("Jordan"))
         assertRejected { db.userDao().insert(user("JORDAN")) }
         assertEquals("Jordan", db.userDao().findByName("jordan")?.name)
+    }
+
+    @Test
+    fun everyRowGetsADistinctStoredUuid() = runTest {
+        val u = db.userDao().insert(user("A"))
+        val i1 = db.itemDao().insert(item("T1"))
+        val i2 = db.itemDao().insert(item("T2"))
+        val c = db.checkoutDao().insert(checkout(i1, u))
+
+        val uuids = listOf(
+            db.userDao().getById(u)!!.uuid,
+            db.itemDao().getById(i1)!!.uuid,
+            db.itemDao().getById(i2)!!.uuid,
+            db.checkoutDao().openCheckoutForItem(i1)!!.also { assertEquals(c, it.id) }.uuid,
+        )
+        assertEquals(uuids.size, uuids.toSet().size)
+        uuids.forEach { UUID.fromString(it) } // throws if not a valid UUID
+    }
+
+    @Test
+    fun uuidIsUniqueInEachTable() = runTest {
+        val shared = UUID.randomUUID().toString()
+        db.itemDao().insert(item("T1").copy(uuid = shared))
+        assertRejected { db.itemDao().insert(item("T2").copy(uuid = shared)) }
+
+        db.userDao().insert(user("A").copy(uuid = shared))
+        assertRejected { db.userDao().insert(user("B").copy(uuid = shared)) }
+
+        val u = db.userDao().getById(1)!!.id
+        val i1 = db.itemDao().findByTag("T1")!!.id
+        val i2 = db.itemDao().insert(item("T3"))
+        db.checkoutDao().insert(checkout(i1, u).copy(uuid = shared))
+        assertRejected { db.checkoutDao().insert(checkout(i2, u).copy(uuid = shared)) }
     }
 
     @Test

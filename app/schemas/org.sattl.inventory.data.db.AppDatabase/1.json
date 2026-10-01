@@ -2,16 +2,22 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "1d8f1089cf430b3749211245b0178f4b",
+    "identityHash": "76eac880adb686f78ace63c6a7618066",
     "entities": [
       {
         "tableName": "items",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sattlTag` TEXT NOT NULL COLLATE NOCASE, `manufacturer` TEXT NOT NULL, `modelNumber` TEXT NOT NULL, `serialNumber` TEXT, `homeLocation` TEXT NOT NULL, `dateIntoInventory` TEXT NOT NULL, `notes` TEXT, `isCheckoutable` INTEGER NOT NULL, `isRetired` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `uuid` TEXT NOT NULL, `sattlTag` TEXT NOT NULL COLLATE NOCASE, `manufacturer` TEXT NOT NULL, `modelNumber` TEXT NOT NULL, `serialNumber` TEXT, `homeLocation` TEXT NOT NULL, `dateIntoInventory` TEXT NOT NULL, `notes` TEXT, `isCheckoutable` INTEGER NOT NULL, `isRetired` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uuid",
+            "columnName": "uuid",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -96,18 +102,33 @@
             ],
             "orders": [],
             "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_items_sattlTag` ON `${TABLE_NAME}` (`sattlTag`)"
+          },
+          {
+            "name": "index_items_uuid",
+            "unique": true,
+            "columnNames": [
+              "uuid"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_items_uuid` ON `${TABLE_NAME}` (`uuid`)"
           }
         ],
         "foreignKeys": []
       },
       {
         "tableName": "users",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL COLLATE NOCASE, `role` TEXT NOT NULL, `pinHash` TEXT NOT NULL, `pinSalt` TEXT NOT NULL, `mustChangePin` INTEGER NOT NULL, `failedAttempts` INTEGER NOT NULL, `lockedUntil` INTEGER, `isActive` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `uuid` TEXT NOT NULL, `name` TEXT NOT NULL COLLATE NOCASE, `role` TEXT NOT NULL, `pinHash` TEXT NOT NULL, `pinSalt` TEXT NOT NULL, `mustChangePin` INTEGER NOT NULL, `failedAttempts` INTEGER NOT NULL, `lockedUntil` INTEGER, `isActive` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uuid",
+            "columnName": "uuid",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -180,18 +201,33 @@
             ],
             "orders": [],
             "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_users_name` ON `${TABLE_NAME}` (`name`)"
+          },
+          {
+            "name": "index_users_uuid",
+            "unique": true,
+            "columnNames": [
+              "uuid"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_users_uuid` ON `${TABLE_NAME}` (`uuid`)"
           }
         ],
         "foreignKeys": []
       },
       {
         "tableName": "checkouts",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `itemId` INTEGER NOT NULL, `userId` INTEGER NOT NULL, `checkoutDate` TEXT NOT NULL, `expectedReturnDate` TEXT, `destination` TEXT NOT NULL, `reason` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `checkedInAt` INTEGER, `checkedInByUserId` INTEGER, FOREIGN KEY(`itemId`) REFERENCES `items`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`userId`) REFERENCES `users`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`checkedInByUserId`) REFERENCES `users`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `uuid` TEXT NOT NULL, `itemId` INTEGER NOT NULL, `userId` INTEGER NOT NULL, `checkoutDate` TEXT NOT NULL, `expectedReturnDate` TEXT, `destination` TEXT NOT NULL, `reason` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `checkedInAt` INTEGER, `checkedInByUserId` INTEGER, FOREIGN KEY(`itemId`) REFERENCES `items`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`userId`) REFERENCES `users`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`checkedInByUserId`) REFERENCES `users`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uuid",
+            "columnName": "uuid",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -282,6 +318,15 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_checkouts_checkedInByUserId` ON `${TABLE_NAME}` (`checkedInByUserId`)"
+          },
+          {
+            "name": "index_checkouts_uuid",
+            "unique": true,
+            "columnNames": [
+              "uuid"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_checkouts_uuid` ON `${TABLE_NAME}` (`uuid`)"
           }
         ],
         "foreignKeys": [
@@ -380,7 +425,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1d8f1089cf430b3749211245b0178f4b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '76eac880adb686f78ace63c6a7618066')"
     ]
   }
 }
