@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.first
 import org.sattl.inventory.ui.AppNavHost
 import org.sattl.inventory.ui.Routes
 import org.sattl.inventory.ui.components.IdleWarningDialog
+import org.sattl.inventory.ui.components.LocalUserActivity
 import org.sattl.inventory.ui.theme.SattlTheme
 
 /**
@@ -40,7 +42,10 @@ class MainActivity : ComponentActivity() {
                     Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    Box(Modifier.safeDrawingPadding()) { AppRoot() }
+                    // Lets text fields and dialogs reset the idle timer too (see LocalUserActivity).
+                    CompositionLocalProvider(LocalUserActivity provides container.sessionManager::onUserInteraction) {
+                        Box(Modifier.safeDrawingPadding()) { AppRoot() }
+                    }
                 }
             }
         }
@@ -72,8 +77,8 @@ class MainActivity : ComponentActivity() {
 
     /**
      * Every touch on the app's window resets the inactivity timer (rule 6.14).
-     * Note: typing on the on-screen keyboard does not pass through here, so long text forms
-     * (milestone 2) must also report activity when their text changes.
+     * Keyboard typing and touches inside dialogs do not pass through here; those are
+     * reported through LocalUserActivity instead.
      */
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) container.sessionManager.onUserInteraction()
