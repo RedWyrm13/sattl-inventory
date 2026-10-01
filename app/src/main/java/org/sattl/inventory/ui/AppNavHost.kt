@@ -6,12 +6,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import org.sattl.inventory.AppContainer
 import org.sattl.inventory.session.SessionUser
 import org.sattl.inventory.ui.inventory.InventoryScreen
+import org.sattl.inventory.ui.inventory.InventoryViewModel
+import org.sattl.inventory.ui.item.ItemDetailScreen
+import org.sattl.inventory.ui.item.ItemDetailViewModel
+import org.sattl.inventory.ui.item.ItemFormScreen
+import org.sattl.inventory.ui.item.ItemFormViewModel
 import org.sattl.inventory.ui.login.LoginScreen
 import org.sattl.inventory.ui.login.LoginViewModel
 import org.sattl.inventory.ui.pin.ChangePinScreen
@@ -25,6 +32,15 @@ object Routes {
     const val LOGIN = "login"
     const val CHANGE_PIN = "change_pin"
     const val INVENTORY = "inventory"
+    const val ITEM = "item/{itemId}"
+    const val ITEM_FORM = "item_form?itemId={itemId}"
+
+    fun item(id: Long) = "item/$id"
+
+    /** Add a new item when [id] is null, otherwise edit that item. */
+    fun itemForm(id: Long?) = "item_form?itemId=${id ?: NO_ID}"
+
+    const val NO_ID = -1L
 
     /** Screens that can be shown without anyone logged in. */
     val PUBLIC = setOf(SETUP, LOGIN)
@@ -89,10 +105,64 @@ fun AppNavHost(
 
         composable(Routes.INVENTORY) {
             val current = user ?: return@composable
+            val vm: InventoryViewModel = viewModel(factory = viewModelFactory {
+                initializer { InventoryViewModel(container.itemRepository, current) }
+            })
             InventoryScreen(
+                viewModel = vm,
                 user = current,
                 onLogout = session::logout,
                 onChangePin = { navController.navigate(Routes.CHANGE_PIN) },
+                onOpenItem = { navController.navigate(Routes.item(it)) },
+                onAddItem = { navController.navigate(Routes.itemForm(null)) },
+            )
+        }
+
+        composable(
+            Routes.ITEM,
+            arguments = listOf(navArgument("itemId") { type = NavType.LongType }),
+        ) { entry ->
+            val current = user ?: return@composable
+            val itemId = entry.arguments!!.getLong("itemId")
+            val vm: ItemDetailViewModel = viewModel(factory = viewModelFactory {
+                initializer { ItemDetailViewModel(container.itemRepository, current, itemId) }
+            })
+            ItemDetailScreen(
+                viewModel = vm,
+                user = current,
+                onLogout = session::logout,
+                onChangePin = { navController.navigate(Routes.CHANGE_PIN) },
+                onBack = { navController.popBackStack() },
+                onEdit = { navController.navigate(Routes.itemForm(itemId)) },
+            )
+        }
+
+        composable(
+            Routes.ITEM_FORM,
+            arguments = listOf(navArgument("itemId") { type = NavType.LongType; defaultValue = Routes.NO_ID }),
+        ) { entry ->
+            val current = user ?: return@composable
+            // Admin only (spec section 3). The UI never offers this route to users.
+            if (!current.isAdmin) return@composable
+            val itemId = entry.arguments!!.getLong("itemId").takeIf { it != Routes.NO_ID }
+            val vm: ItemFormViewModel = viewModel(factory = viewModelFactory {
+                initializer { ItemFormViewModel(container.itemRepository, current, itemId) }
+            })
+            ItemFormScreen(
+                viewModel = vm,
+                user = current,
+                onLogout = session::logout,
+                onSaved = { savedId ->
+                    if (itemId == null) {
+                        // New item: show its detail page in place of the form.
+                        navController.navigate(Routes.item(savedId)) {
+                            popUpTo(Routes.ITEM_FORM) { inclusive = true }
+                        }
+                    } else {
+                        navController.popBackStack()
+                    }
+                },
+                onCancel = { navController.popBackStack() },
             )
         }
     }

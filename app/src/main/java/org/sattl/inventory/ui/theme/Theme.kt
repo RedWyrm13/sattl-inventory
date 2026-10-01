@@ -23,6 +23,9 @@ private val Colors = lightColorScheme(
     onPrimaryContainer = Color(0xFF001B3E),
     secondary = Blue,
     onSecondary = Color.White,
+    // Selected chips and similar use this; keep it in the blue family (one accent colour).
+    secondaryContainer = Color(0xFFD6E3FF),
+    onSecondaryContainer = Color(0xFF001B3E),
     background = Color(0xFFF7F7F7),
     onBackground = Color(0xFF1A1A1A),
     surface = Color.White,
