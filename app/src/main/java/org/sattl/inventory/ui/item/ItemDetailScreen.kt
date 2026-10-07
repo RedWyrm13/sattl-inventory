@@ -38,12 +38,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.sattl.inventory.data.model.CheckoutHistoryRow
 import org.sattl.inventory.data.model.InventoryRow
+import org.sattl.inventory.domain.ItemActions
 import org.sattl.inventory.domain.ItemStatus
 import org.sattl.inventory.session.SessionUser
 import org.sattl.inventory.ui.components.AppTopBar
 import org.sattl.inventory.ui.components.ConfirmDialog
 import org.sattl.inventory.ui.components.Dimens
 import org.sattl.inventory.ui.components.StatusBadge
+import org.sattl.inventory.ui.components.SuccessThenLogout
 import org.sattl.inventory.util.Formats
 
 /** Item detail (spec 5.5): fields on the left, checkout info and admin history on the right. */
@@ -55,9 +57,20 @@ fun ItemDetailScreen(
     onChangePin: () -> Unit,
     onBack: () -> Unit,
     onEdit: () -> Unit,
+    onCheckOut: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var confirmRetire by remember { mutableStateOf(false) }
+    var confirmCheckIn by remember { mutableStateOf(false) }
+
+    state.checkedIn?.let { done ->
+        SuccessThenLogout(
+            title = "${done.sattlTag} is checked in",
+            detail = "Please return it to ${done.homeLocation}.",
+            onLogout = onLogout,
+        )
+        return
+    }
 
     Column(Modifier.fillMaxSize()) {
         AppTopBar(user = user, onLogout = onLogout, onChangePin = onChangePin)
@@ -88,6 +101,17 @@ fun ItemDetailScreen(
             )
             StatusBadge(row.status)
             Spacer(Modifier.weight(1f))
+            // Spec 5.5: Check out only when Available; Check in only for the borrower or the admin.
+            if (ItemActions.canCheckOut(row)) {
+                Button(onClick = onCheckOut, enabled = !state.busy, modifier = Modifier.heightIn(min = 64.dp)) {
+                    Text("Check out", style = MaterialTheme.typography.titleMedium)
+                }
+            }
+            if (ItemActions.canCheckIn(row, user)) {
+                Button(onClick = { confirmCheckIn = true }, enabled = !state.busy, modifier = Modifier.heightIn(min = 64.dp)) {
+                    Text("Check in", style = MaterialTheme.typography.titleMedium)
+                }
+            }
             if (user.isAdmin) {
                 OutlinedButton(onClick = onEdit, modifier = Modifier.heightIn(min = Dimens.TouchTarget)) {
                     Icon(Icons.Default.Edit, contentDescription = null)
@@ -108,6 +132,15 @@ fun ItemDetailScreen(
                     ) { Text("Retire") }
                 }
             }
+        }
+        // Explain the disabled Retire button (rule 6.8; spec 10: say what to do).
+        if (user.isAdmin && row.isCheckedOut) {
+            Text(
+                "To retire this item, check it in first.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = Dimens.ScreenPadding),
+            )
         }
         state.message?.let { msg ->
             Row(
@@ -162,6 +195,24 @@ fun ItemDetailScreen(
                     }
                 }
             }
+        }
+    }
+
+    if (confirmCheckIn) {
+        state.row?.let { r ->
+            // Spec 5.7 step 1. When the admin returns someone else's item, say whose it is.
+            val forSomeoneElse = r.borrowerId != user.id
+            ConfirmDialog(
+                title = "Return ${r.item.sattlTag} to ${r.item.homeLocation}?",
+                message = if (forSomeoneElse) "${r.borrowerName} checked this item out. You will be recorded as checking it in."
+                else "This ends your checkout. Put the item back in ${r.item.homeLocation}.",
+                confirmLabel = "Check in",
+                onConfirm = {
+                    confirmCheckIn = false
+                    viewModel.checkIn()
+                },
+                onDismiss = { confirmCheckIn = false },
+            )
         }
     }
 

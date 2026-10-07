@@ -3,27 +3,17 @@ package org.sattl.inventory.ui.item
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,12 +27,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.sattl.inventory.domain.ItemField
 import org.sattl.inventory.session.SessionUser
+import org.sattl.inventory.ui.components.AppDatePickerDialog
 import org.sattl.inventory.ui.components.AppTextField
+import org.sattl.inventory.ui.components.DateField
 import org.sattl.inventory.ui.components.AppTopBar
 import org.sattl.inventory.ui.components.Dimens
-import org.sattl.inventory.ui.components.reportsUserActivity
-import org.sattl.inventory.util.Formats
-import java.time.LocalDate
 
 /** Add / edit item form (spec 5.8). Errors appear under each field. Fields marked * are required. */
 @Composable
@@ -130,7 +119,13 @@ fun ItemFormScreen(
                         capitalization = KeyboardCapitalization.Words,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    DateField(input.dateIntoInventory, err[ItemField.DATE_INTO_INVENTORY]) { pickingDate = true }
+                    DateField(
+                        label = "Date into inventory",
+                        date = input.dateIntoInventory,
+                        error = err[ItemField.DATE_INTO_INVENTORY],
+                        required = true,
+                        onClick = { pickingDate = true },
+                    )
                     Row(
                         Modifier.heightIn(min = Dimens.TouchTarget),
                         verticalAlignment = Alignment.CenterVertically,
@@ -149,7 +144,7 @@ fun ItemFormScreen(
     }
 
     if (pickingDate) {
-        DatePickerFor(
+        AppDatePickerDialog(
             initial = state.input.dateIntoInventory,
             onPicked = {
                 pickingDate = false
@@ -157,39 +152,5 @@ fun ItemFormScreen(
             },
             onDismiss = { pickingDate = false },
         )
-    }
-}
-
-@Composable
-private fun DateField(date: LocalDate?, error: String?, onClick: () -> Unit) {
-    Column {
-        Text("Date into inventory *", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        OutlinedButton(onClick = onClick, modifier = Modifier.heightIn(min = Dimens.TouchTarget)) {
-            Icon(Icons.Default.DateRange, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text(date?.let(Formats::date) ?: "Choose a date")
-        }
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DatePickerFor(initial: LocalDate?, onPicked: (LocalDate) -> Unit, onDismiss: () -> Unit) {
-    val pickerState = rememberDatePickerState(initialSelectedDateMillis = initial?.let(Formats::toPickerMillis))
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = { pickerState.selectedDateMillis?.let { onPicked(Formats.fromPickerMillis(it)) } ?: onDismiss() },
-                modifier = Modifier.heightIn(min = Dimens.TouchTarget),
-            ) { Text("OK") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = Dimens.TouchTarget)) { Text("Cancel") }
-        },
-    ) {
-        // The dialog is its own window, so report touches to the idle timer explicitly.
-        DatePicker(state = pickerState, modifier = Modifier.reportsUserActivity())
     }
 }

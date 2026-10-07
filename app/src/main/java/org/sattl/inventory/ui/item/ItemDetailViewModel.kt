@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.sattl.inventory.data.model.CheckoutHistoryRow
 import org.sattl.inventory.data.model.InventoryRow
+import org.sattl.inventory.data.repo.CheckInResult
+import org.sattl.inventory.data.repo.CheckoutRepository
 import org.sattl.inventory.data.repo.ItemActionResult
 import org.sattl.inventory.data.repo.ItemRepository
 import org.sattl.inventory.session.SessionUser
@@ -24,11 +26,14 @@ data class ItemDetailUiState(
     val history: List<CheckoutHistoryRow> = emptyList(),
     val message: String? = null,
     val busy: Boolean = false,
+    /** Set after a successful check-in: the screen shows success, then logs out (spec 5.7). */
+    val checkedIn: CheckInResult.Done? = null,
 )
 
-/** Item detail (spec 5.5). Check out / check in buttons are added in milestone 3. */
+/** Item detail (spec 5.5), including check-in (spec 5.7). Check-out has its own screen. */
 class ItemDetailViewModel(
     private val items: ItemRepository,
+    private val checkouts: CheckoutRepository,
     private val user: SessionUser,
     private val itemId: Long,
 ) : ViewModel() {
@@ -53,6 +58,19 @@ class ItemDetailViewModel(
     fun setCheckoutable(checkoutable: Boolean) = run { items.setCheckoutable(user, itemId, checkoutable) }
 
     fun dismissMessage() = ui.update { it.copy(message = null) }
+
+    /** Closes the open checkout shown on screen. Rule 6.4 is enforced by the repository. */
+    fun checkIn() {
+        val checkoutId = state.value.row?.openCheckoutId ?: return
+        if (ui.value.busy) return
+        ui.update { it.copy(busy = true, message = null) }
+        viewModelScope.launch {
+            when (val result = checkouts.checkIn(user, checkoutId)) {
+                is CheckInResult.Done -> ui.update { it.copy(busy = false, checkedIn = result) }
+                is CheckInResult.Blocked -> ui.update { it.copy(busy = false, message = result.message) }
+            }
+        }
+    }
 
     private fun run(action: suspend () -> ItemActionResult) {
         if (ui.value.busy) return

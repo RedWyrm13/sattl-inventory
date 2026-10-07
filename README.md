@@ -3,9 +3,9 @@
 An offline Android tablet app that tracks the SATTL lab's equipment and who has it.
 The full build spec is [`SPEC.md`](SPEC.md). It always matches the app; see its change log (section 15).
 
-> **Status:** milestones 1–2 of 6 are done (project skeleton, database, first-time setup,
+> **Status:** milestones 1–3 of 6 are done (project skeleton, database, first-time setup,
 > login, Change PIN, auto-logout; inventory list, search, filters, item detail,
-> add / edit / retire items). The step-by-step guide for non-developers (installing
+> add / edit / retire items; check out and check in). The step-by-step guide for non-developers (installing
 > Android Studio, sideloading the APK, app pinning, updating without data loss, signing
 > key storage) will be written here as part of milestone 6.
 

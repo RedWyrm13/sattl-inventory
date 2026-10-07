@@ -162,13 +162,13 @@ User enters a new PIN twice. Forced on first login and after a reset. Also reach
 ### 5.6 Check out
 
 1. Form shows the item summary and the borrower (logged-in user, not editable).
-2. Fields: checkout date (defaults to today), expected return date (optional), destination (required), reason (required).
+2. Fields: checkout date (defaults to today; cannot be in the future, since a future checkout would be a reservation), expected return date (optional), destination (required), reason (required).
 3. Confirm saves the checkout, shows a success message for 2 seconds, then logs the user out automatically.
 
 ### 5.7 Check in
 
-1. Confirmation dialog: "Return [tag] to [home location]?"
-2. Confirm closes the checkout, records the time and who checked it in, shows success, then logs out automatically.
+1. Confirmation dialog: "Return [tag] to [home location]?" When the admin returns someone else's item, the dialog also names the borrower and says the admin will be recorded as checking it in.
+2. Confirm closes the checkout, records the time and who checked it in, shows success for 2 seconds (as in 5.6), then logs out automatically.
 
 ### 5.8 Add / edit item (admin)
 
@@ -358,3 +358,5 @@ This spec is kept in sync with the app. When a decision changes or an ambiguity 
 | 2026-10-01 | Search matches both home and current location. *Agent's reading; awaiting lab manager confirmation.* | 5.4 |
 | 2026-10-01 | All excludes retired items for the admin too, and filters follow derived status, so a not-checkoutable item that is out shows under Checked out. *Agent's reading; awaiting lab manager confirmation.* | 5.4 |
 | 2026-10-01 | Checkout details also show in the My checkouts filter, not just Checked out. *Agent's reading; awaiting lab manager confirmation.* | 5.4 |
+| 2026-10-07 | The checkout date cannot be in the future (a future date would be a reservation, which section 13 rules out). *Agent's reading; awaiting lab manager confirmation.* | 5.6 |
+| 2026-10-07 | The check-in success message shows for 2 seconds, as for checkout. When the admin returns someone else's item, the dialog names the borrower. | 5.7 |

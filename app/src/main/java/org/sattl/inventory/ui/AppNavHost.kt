@@ -13,6 +13,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.sattl.inventory.AppContainer
 import org.sattl.inventory.session.SessionUser
+import org.sattl.inventory.ui.checkout.CheckoutScreen
+import org.sattl.inventory.ui.checkout.CheckoutViewModel
 import org.sattl.inventory.ui.inventory.InventoryScreen
 import org.sattl.inventory.ui.inventory.InventoryViewModel
 import org.sattl.inventory.ui.item.ItemDetailScreen
@@ -34,6 +36,9 @@ object Routes {
     const val INVENTORY = "inventory"
     const val ITEM = "item/{itemId}"
     const val ITEM_FORM = "item_form?itemId={itemId}"
+    const val CHECKOUT = "checkout/{itemId}"
+
+    fun checkout(itemId: Long) = "checkout/$itemId"
 
     fun item(id: Long) = "item/$id"
 
@@ -125,7 +130,7 @@ fun AppNavHost(
             val current = user ?: return@composable
             val itemId = entry.arguments!!.getLong("itemId")
             val vm: ItemDetailViewModel = viewModel(factory = viewModelFactory {
-                initializer { ItemDetailViewModel(container.itemRepository, current, itemId) }
+                initializer { ItemDetailViewModel(container.itemRepository, container.checkoutRepository, current, itemId) }
             })
             ItemDetailScreen(
                 viewModel = vm,
@@ -134,6 +139,26 @@ fun AppNavHost(
                 onChangePin = { navController.navigate(Routes.CHANGE_PIN) },
                 onBack = { navController.popBackStack() },
                 onEdit = { navController.navigate(Routes.itemForm(itemId)) },
+                onCheckOut = { navController.navigate(Routes.checkout(itemId)) },
+            )
+        }
+
+        composable(
+            Routes.CHECKOUT,
+            arguments = listOf(navArgument("itemId") { type = NavType.LongType }),
+        ) { entry ->
+            val current = user ?: return@composable
+            val itemId = entry.arguments!!.getLong("itemId")
+            val vm: CheckoutViewModel = viewModel(factory = viewModelFactory {
+                initializer {
+                    CheckoutViewModel(container.itemRepository, container.checkoutRepository, current, itemId)
+                }
+            })
+            CheckoutScreen(
+                viewModel = vm,
+                user = current,
+                onLogout = session::logout,
+                onCancel = { navController.popBackStack() },
             )
         }
 
