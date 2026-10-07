@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import org.sattl.inventory.data.db.AppDatabase
 import org.sattl.inventory.data.repo.AuthRepository
+import org.sattl.inventory.data.repo.CheckoutRepository
 import org.sattl.inventory.data.repo.ItemRepository
 import org.sattl.inventory.session.SessionManager
 
@@ -30,5 +31,6 @@ class AppContainer(app: Application) {
     val database: AppDatabase = AppDatabase.build(app)
     val authRepository = AuthRepository(database)
     val itemRepository = ItemRepository(database)
+    val checkoutRepository = CheckoutRepository(database)
     val sessionManager = SessionManager(appScope)
 }

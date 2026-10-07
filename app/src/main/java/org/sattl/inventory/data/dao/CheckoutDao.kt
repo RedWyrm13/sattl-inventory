@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.Flow
 import org.sattl.inventory.data.entity.Checkout
 import org.sattl.inventory.data.model.CheckoutHistoryRow
 
-/** Checkout queries. Check-out / check-in flows are added in milestone 3. */
 @Dao
 interface CheckoutDao {
     @Insert
@@ -16,6 +15,9 @@ interface CheckoutDao {
 
     @Update
     suspend fun update(checkout: Checkout)
+
+    @Query("SELECT * FROM checkouts WHERE id = :id")
+    suspend fun getById(id: Long): Checkout?
 
     /** The open checkout for an item, if any. There can be at most one (rule 6.1). */
     @Query("SELECT * FROM checkouts WHERE itemId = :itemId AND checkedInAt IS NULL")
