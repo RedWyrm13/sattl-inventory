@@ -355,8 +355,8 @@ This spec is kept in sync with the app. When a decision changes or an ambiguity 
 | 2026-10-01 | After a lockout, the failure counter resets, giving 5 fresh attempts. | 5.2, 8 |
 | 2026-10-01 | "New PIN ≠ default PIN" applies only to a forced change. A wrong current PIN on a voluntary change does not count toward the lockout. | 5.3 |
 | 2026-10-01 | The idle warning appears at 1:45, so logout happens at exactly 2:00 of inactivity. | 6.14 |
-| 2026-10-01 | Search matches both home and current location. *Agent's reading; awaiting lab manager confirmation.* | 5.4 |
-| 2026-10-01 | All excludes retired items for the admin too, and filters follow derived status, so a not-checkoutable item that is out shows under Checked out. *Agent's reading; awaiting lab manager confirmation.* | 5.4 |
-| 2026-10-01 | Checkout details also show in the My checkouts filter, not just Checked out. *Agent's reading; awaiting lab manager confirmation.* | 5.4 |
+| 2026-10-01 | Search matches both home and current location. Confirmed by the lab manager. | 5.4 |
+| 2026-10-01 | All excludes retired items for the admin too, and filters follow derived status, so a not-checkoutable item that is out shows under Checked out. Confirmed by the lab manager. | 5.4 |
+| 2026-10-01 | Checkout details also show in the My checkouts filter, not just Checked out. Confirmed by the lab manager. | 5.4 |
 | 2026-10-07 | The checkout date cannot be in the future (a future date would be a reservation, which section 13 rules out). Confirmed by the lab manager. | 5.6 |
 | 2026-10-07 | The check-in success message shows for 2 seconds, as for checkout. When the admin returns someone else's item, the dialog names the borrower. | 5.7 |
