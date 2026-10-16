@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -14,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,11 +32,15 @@ import org.sattl.inventory.ui.components.PinPad
 import org.sattl.inventory.ui.components.SecureScreen
 
 /**
- * Login screen (spec section 5.2). Name dropdown and messages on the left, PIN pad on the right.
- * The "Admin PIN recovery" link (spec 5.2 step 5) is added with the Recovery screen in milestone 4.
+ * Login screen (spec section 5.2). Name dropdown, messages and the Admin PIN recovery link
+ * on the left, PIN pad on the right.
  */
 @Composable
-fun LoginScreen(viewModel: LoginViewModel, onLoggedIn: (mustChangePin: Boolean) -> Unit) {
+fun LoginScreen(
+    viewModel: LoginViewModel,
+    onLoggedIn: (mustChangePin: Boolean) -> Unit,
+    onRecovery: () -> Unit,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     SecureScreen()
 
@@ -74,6 +80,10 @@ fun LoginScreen(viewModel: LoginViewModel, onLoggedIn: (mustChangePin: Boolean) 
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 state.busy -> Text("Checking…", style = MaterialTheme.typography.bodyLarge)
+            }
+            // Spec 5.2 step 5: a small link to Admin PIN recovery (5.10).
+            TextButton(onClick = onRecovery, modifier = Modifier.heightIn(min = Dimens.TouchTarget)) {
+                Text("Admin PIN recovery")
             }
         }
         PinPad(

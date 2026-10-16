@@ -177,12 +177,14 @@ Form with all Item fields. Validation errors appear next to the field. Saving a 
 ### 5.9 Manage users (admin)
 
 - List of users with role, status and whether they currently hold items.
-- Add user: name and a default PIN typed by the admin. mustChangePin is set to true.
-- Edit name, Reset PIN (admin types a new default PIN; mustChangePin set to true; lockout cleared), Deactivate / Reactivate.
+- Add user: name and a default PIN typed by the admin (entered twice, so a typo cannot lock the person out). mustChangePin is set to true. New users are always role USER (section 3).
+- Edit name, Reset PIN (admin types a new default PIN, also twice; mustChangePin set to true; lockout cleared), Deactivate / Reactivate.
+- The admin's own row offers Edit name only: the admin changes their own PIN with Change PIN, and cannot be deactivated (rule 6.12). Reset PIN also works for a deactivated user, so the admin can reset before reactivating.
+- Trying to deactivate someone who holds items explains straight away which items block it (rule 6.10) instead of asking for confirmation.
 
 ### 5.10 Admin PIN recovery
 
-Enter the recovery code, then set a new admin PIN. A new recovery code is generated and shown once, as in setup.
+Enter the recovery code, then set a new admin PIN. A new recovery code is generated and shown once, as in setup. The new PIN and new code are saved together only after the admin ticks "I have written this down", so the old code keeps working if recovery is abandoned part way. Recovery also clears any admin lockout. Dashes, spaces and letter case in the typed code are ignored.
 
 ### 5.11 Export / Restore and Settings (admin)
 
@@ -360,3 +362,7 @@ This spec is kept in sync with the app. When a decision changes or an ambiguity 
 | 2026-10-01 | Checkout details also show in the My checkouts filter, not just Checked out. Confirmed by the lab manager. | 5.4 |
 | 2026-10-07 | The checkout date cannot be in the future (a future date would be a reservation, which section 13 rules out). Confirmed by the lab manager. | 5.6 |
 | 2026-10-07 | The check-in success message shows for 2 seconds, as for checkout. When the admin returns someone else's item, the dialog names the borrower. | 5.7 |
+| 2026-10-16 | Default PINs (Add user, Reset PIN) are typed twice. *Agent's reading; awaiting lab manager confirmation.* | 5.9 |
+| 2026-10-16 | The admin's own PIN cannot be reset from Manage users; the admin uses Change PIN instead. *Agent's reading; awaiting lab manager confirmation.* | 5.9 |
+| 2026-10-16 | Reset PIN works for deactivated users. Deactivating someone who holds items explains why it is blocked without a confirmation dialog first. | 5.9 |
+| 2026-10-16 | Recovery saves the new PIN and code together only after "I have written this down" is ticked, and clears any admin lockout. | 5.10 |

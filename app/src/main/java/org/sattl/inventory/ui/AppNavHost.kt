@@ -25,8 +25,14 @@ import org.sattl.inventory.ui.login.LoginScreen
 import org.sattl.inventory.ui.login.LoginViewModel
 import org.sattl.inventory.ui.pin.ChangePinScreen
 import org.sattl.inventory.ui.pin.ChangePinViewModel
+import org.sattl.inventory.ui.recovery.RecoveryScreen
+import org.sattl.inventory.ui.recovery.RecoveryViewModel
 import org.sattl.inventory.ui.setup.SetupScreen
 import org.sattl.inventory.ui.setup.SetupViewModel
+import org.sattl.inventory.ui.users.ManageUsersScreen
+import org.sattl.inventory.ui.users.ManageUsersViewModel
+import org.sattl.inventory.ui.users.UserPinScreen
+import org.sattl.inventory.ui.users.UserPinViewModel
 
 /** Screen routes. */
 object Routes {
@@ -37,6 +43,12 @@ object Routes {
     const val ITEM = "item/{itemId}"
     const val ITEM_FORM = "item_form?itemId={itemId}"
     const val CHECKOUT = "checkout/{itemId}"
+    const val USERS = "users"
+    const val USER_ADD = "user_add"
+    const val USER_RESET_PIN = "user_reset_pin/{userId}"
+    const val RECOVERY = "recovery"
+
+    fun userResetPin(userId: Long) = "user_reset_pin/$userId"
 
     fun checkout(itemId: Long) = "checkout/$itemId"
 
@@ -48,7 +60,7 @@ object Routes {
     const val NO_ID = -1L
 
     /** Screens that can be shown without anyone logged in. */
-    val PUBLIC = setOf(SETUP, LOGIN)
+    val PUBLIC = setOf(SETUP, LOGIN, RECOVERY)
 }
 
 /**
@@ -86,9 +98,20 @@ fun AppNavHost(
             val vm: LoginViewModel = viewModel(factory = viewModelFactory {
                 initializer { LoginViewModel(container.authRepository, session) }
             })
-            LoginScreen(vm, onLoggedIn = { mustChangePin ->
-                navController.navigateClearingStack(if (mustChangePin) Routes.CHANGE_PIN else Routes.INVENTORY)
+            LoginScreen(
+                vm,
+                onLoggedIn = { mustChangePin ->
+                    navController.navigateClearingStack(if (mustChangePin) Routes.CHANGE_PIN else Routes.INVENTORY)
+                },
+                onRecovery = { navController.navigate(Routes.RECOVERY) },
+            )
+        }
+
+        composable(Routes.RECOVERY) {
+            val vm: RecoveryViewModel = viewModel(factory = viewModelFactory {
+                initializer { RecoveryViewModel(container.authRepository) }
             })
+            RecoveryScreen(vm, onExit = { navController.navigateClearingStack(Routes.LOGIN) })
         }
 
         composable(Routes.CHANGE_PIN) {
@@ -120,7 +143,48 @@ fun AppNavHost(
                 onChangePin = { navController.navigate(Routes.CHANGE_PIN) },
                 onOpenItem = { navController.navigate(Routes.item(it)) },
                 onAddItem = { navController.navigate(Routes.itemForm(null)) },
+                onManageUsers = { navController.navigate(Routes.USERS) },
             )
+        }
+
+        composable(Routes.USERS) {
+            val current = user ?: return@composable
+            // Admin only (spec section 3).
+            if (!current.isAdmin) return@composable
+            val vm: ManageUsersViewModel = viewModel(factory = viewModelFactory {
+                initializer { ManageUsersViewModel(container.userRepository, session, current) }
+            })
+            ManageUsersScreen(
+                viewModel = vm,
+                user = current,
+                onLogout = session::logout,
+                onChangePin = { navController.navigate(Routes.CHANGE_PIN) },
+                onBack = { navController.popBackStack() },
+                onAddUser = { navController.navigate(Routes.USER_ADD) },
+                onResetPin = { navController.navigate(Routes.userResetPin(it)) },
+            )
+        }
+
+        composable(Routes.USER_ADD) {
+            val current = user ?: return@composable
+            if (!current.isAdmin) return@composable
+            val vm: UserPinViewModel = viewModel(factory = viewModelFactory {
+                initializer { UserPinViewModel(container.userRepository, current, resetUserId = null) }
+            })
+            UserPinScreen(vm, current, onLogout = session::logout, onFinished = { navController.popBackStack() })
+        }
+
+        composable(
+            Routes.USER_RESET_PIN,
+            arguments = listOf(navArgument("userId") { type = NavType.LongType }),
+        ) { entry ->
+            val current = user ?: return@composable
+            if (!current.isAdmin) return@composable
+            val userId = entry.arguments!!.getLong("userId")
+            val vm: UserPinViewModel = viewModel(factory = viewModelFactory {
+                initializer { UserPinViewModel(container.userRepository, current, resetUserId = userId) }
+            })
+            UserPinScreen(vm, current, onLogout = session::logout, onFinished = { navController.popBackStack() })
         }
 
         composable(

@@ -40,6 +40,8 @@ import org.sattl.inventory.data.model.InventoryRow
 import org.sattl.inventory.domain.InventoryFilter
 import org.sattl.inventory.domain.ItemStatus
 import org.sattl.inventory.session.SessionUser
+import org.sattl.inventory.ui.components.AdminMenu
+import org.sattl.inventory.ui.components.AdminMenuEntry
 import org.sattl.inventory.ui.components.AppTextField
 import org.sattl.inventory.ui.components.AppTopBar
 import org.sattl.inventory.ui.components.Dimens
@@ -49,8 +51,8 @@ import org.sattl.inventory.util.Formats
 /**
  * Inventory home screen (spec 5.4).
  *
- * Still to come: "Export this view" and the Admin menu (Users, Export / Restore, Settings,
- * Exit kiosk) arrive with those features in milestones 4–6.
+ * Still to come: "Export this view" and the remaining Admin menu entries (Export / Restore,
+ * Settings, Exit kiosk) arrive with those features in milestones 5–6.
  */
 @Composable
 fun InventoryScreen(
@@ -60,11 +62,14 @@ fun InventoryScreen(
     onChangePin: () -> Unit,
     onOpenItem: (Long) -> Unit,
     onAddItem: () -> Unit,
+    onManageUsers: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Column(Modifier.fillMaxSize()) {
-        AppTopBar(user = user, onLogout = onLogout, onChangePin = onChangePin)
+        AppTopBar(user = user, onLogout = onLogout, onChangePin = onChangePin) {
+            if (user.isAdmin) AdminMenu(listOf(AdminMenuEntry("Users", onManageUsers)))
+        }
         Column(
             Modifier
                 .fillMaxSize()

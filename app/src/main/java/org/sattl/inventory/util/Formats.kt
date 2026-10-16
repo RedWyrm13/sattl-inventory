@@ -14,6 +14,11 @@ object Formats {
 
     fun date(d: LocalDate): String = date.format(d)
 
+    private val time = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+
+    fun time(epochMillis: Long): String =
+        time.format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()))
+
     fun dateTime(epochMillis: Long): String =
         dateTime.format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()))
 
