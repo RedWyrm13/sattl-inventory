@@ -8,6 +8,7 @@ import org.sattl.inventory.data.db.AppDatabase
 import org.sattl.inventory.data.repo.AuthRepository
 import org.sattl.inventory.data.repo.CheckoutRepository
 import org.sattl.inventory.data.repo.ItemRepository
+import org.sattl.inventory.data.repo.UserRepository
 import org.sattl.inventory.session.SessionManager
 
 /**
@@ -32,5 +33,6 @@ class AppContainer(app: Application) {
     val authRepository = AuthRepository(database)
     val itemRepository = ItemRepository(database)
     val checkoutRepository = CheckoutRepository(database)
+    val userRepository = UserRepository(database)
     val sessionManager = SessionManager(appScope)
 }

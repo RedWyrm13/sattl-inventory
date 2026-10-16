@@ -48,6 +48,12 @@ class SessionManager(
         startTicker()
     }
 
+    /** Updates the shown name if [user] is the person logged in (e.g. the admin renamed themselves). */
+    fun refresh(user: User) {
+        val current = _currentUser.value ?: return
+        if (current.id == user.id) _currentUser.value = SessionUser(user.id, user.name, user.role)
+    }
+
     /**
      * Ends the session. Called by the Log out button, by the idle timer, and (from milestone 3)
      * right after a successful checkout or check-in (rule 6.14).
