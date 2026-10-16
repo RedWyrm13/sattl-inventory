@@ -20,6 +20,7 @@ import org.sattl.inventory.data.entity.User
 import org.sattl.inventory.data.repo.AuthRepository
 import org.sattl.inventory.data.repo.ChangePinResult
 import org.sattl.inventory.data.repo.LoginResult
+import org.sattl.inventory.data.repo.RecoveryResult
 import org.sattl.inventory.security.PinHasher
 import org.sattl.inventory.security.PinRules
 import org.sattl.inventory.security.RecoveryCode
@@ -191,5 +192,41 @@ class AuthRepositoryTest {
         val id = addUser("Sam", "1111")
         assertTrue(repo.changePin(id, null, "12") is ChangePinResult.Invalid)
         assertTrue(repo.changePin(id, null, "abcd") is ChangePinResult.Invalid)
+    }
+
+    // --- 5.10 Admin PIN recovery --------------------------------------------------------------
+
+    @Test
+    fun recoveryCodeCheckIgnoresFormattingAndRejectsWrongCodes() = runTest {
+        val code = RecoveryCode.generate()
+        repo.completeSetup("Pat", "2468", code)
+        assertTrue(repo.checkRecoveryCode(code))
+        assertTrue(repo.checkRecoveryCode(RecoveryCode.format(code).lowercase()))
+        assertFalse(repo.checkRecoveryCode(RecoveryCode.generate()))
+        assertFalse(repo.checkRecoveryCode(""))
+    }
+
+    @Test
+    fun recoverySetsNewPinClearsLockoutAndReplacesCode() = runTest {
+        val oldCode = RecoveryCode.generate()
+        val admin = repo.completeSetup("Pat", "2468", oldCode)
+        repeat(5) { repo.login(admin.id, "0000") }
+        assertTrue(repo.login(admin.id, "2468") is LoginResult.LockedOut)
+
+        val newCode = RecoveryCode.generate()
+        assertEquals(RecoveryResult.Success, repo.recoverAdminPin(oldCode, "8642", newCode))
+
+        assertTrue("lockout cleared, new PIN works", repo.login(admin.id, "8642") is LoginResult.Success)
+        assertFalse("old code no longer works", repo.checkRecoveryCode(oldCode))
+        assertTrue("new code works", repo.checkRecoveryCode(newCode))
+    }
+
+    @Test
+    fun recoveryWithWrongCodeChangesNothing() = runTest {
+        val code = RecoveryCode.generate()
+        val admin = repo.completeSetup("Pat", "2468", code)
+        assertTrue(repo.recoverAdminPin(RecoveryCode.generate(), "8642", RecoveryCode.generate()) is RecoveryResult.Invalid)
+        assertTrue(repo.login(admin.id, "2468") is LoginResult.Success)
+        assertTrue(repo.checkRecoveryCode(code))
     }
 }

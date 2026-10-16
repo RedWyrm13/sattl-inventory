@@ -22,6 +22,12 @@ sealed interface LoginResult {
     data object UserNotFound : LoginResult
 }
 
+/** Outcome of admin PIN recovery (spec section 5.10). */
+sealed interface RecoveryResult {
+    data object Success : RecoveryResult
+    data class Invalid(val message: String) : RecoveryResult
+}
+
 /** Outcome of a PIN change (spec section 5.3). */
 sealed interface ChangePinResult {
     data object Success : ChangePinResult
@@ -161,5 +167,45 @@ class AuthRepository(
             users.update(fresh.copy(pinHash = hashed.hash, pinSalt = hashed.salt, mustChangePin = false))
         }
         return ChangePinResult.Success
+    }
+
+    /** Spec 5.10 step 1: true if [code] matches the stored recovery code (dashes, spaces and case ignored). */
+    suspend fun checkRecoveryCode(code: String): Boolean {
+        val stored = settings.get() ?: return false
+        val hash = stored.recoveryCodeHash ?: return false
+        val salt = stored.recoveryCodeSalt ?: return false
+        val normalized = RecoveryCode.normalize(code)
+        if (normalized.length != RecoveryCode.LENGTH) return false
+        return withContext(Dispatchers.Default) { PinHasher.verify(normalized, hash, salt) }
+    }
+
+    /**
+     * Spec 5.10: with the correct recovery [code], sets a new admin PIN and replaces the
+     * recovery code with [newRecoveryCode] (shown once, as in setup). The admin's lockout is
+     * cleared. PIN and new code are saved together in one transaction, so the old code stays
+     * valid until the new one has been shown and saved.
+     */
+    suspend fun recoverAdminPin(code: String, newPin: String, newRecoveryCode: String): RecoveryResult {
+        if (!checkRecoveryCode(code)) {
+            return RecoveryResult.Invalid("That recovery code is not correct. Check it and try again.")
+        }
+        PinRules.formatError(newPin)?.let { return RecoveryResult.Invalid(it) }
+        val pinHashed = withContext(Dispatchers.Default) { PinHasher.hash(newPin) }
+        val codeHashed = withContext(Dispatchers.Default) { PinHasher.hash(RecoveryCode.normalize(newRecoveryCode)) }
+        return db.withTransaction {
+            val admin = users.getAdmin() ?: return@withTransaction RecoveryResult.Invalid("No admin account exists.")
+            users.update(
+                admin.copy(
+                    pinHash = pinHashed.hash,
+                    pinSalt = pinHashed.salt,
+                    mustChangePin = false,
+                    failedAttempts = 0,
+                    lockedUntil = null,
+                )
+            )
+            val current = settings.get()!!
+            settings.upsert(current.copy(recoveryCodeHash = codeHashed.hash, recoveryCodeSalt = codeHashed.salt))
+            RecoveryResult.Success
+        }
     }
 }
