@@ -48,4 +48,16 @@ interface UserDao {
     /** Items this user currently holds (rule 6.10). */
     @Query("SELECT COUNT(*) FROM checkouts WHERE userId = :userId AND checkedInAt IS NULL")
     suspend fun countOpenCheckouts(userId: Long): Int
+
+    // --- Backup and restore (spec 7.1, 7.3) ---
+
+    @Query("SELECT * FROM users ORDER BY id")
+    suspend fun getAll(): List<User>
+
+    @Query("DELETE FROM users")
+    suspend fun deleteAll()
+
+    /** Inserts rows keeping their ids, so references between tables survive a restore. */
+    @Insert
+    suspend fun insertAll(rows: List<User>)
 }

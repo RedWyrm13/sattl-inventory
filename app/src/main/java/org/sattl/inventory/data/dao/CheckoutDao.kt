@@ -35,4 +35,16 @@ interface CheckoutDao {
         """
     )
     fun observeHistory(itemId: Long): Flow<List<CheckoutHistoryRow>>
+
+    // --- Backup and restore (spec 7.1, 7.3) ---
+
+    @Query("SELECT * FROM checkouts ORDER BY id")
+    suspend fun getAll(): List<Checkout>
+
+    @Query("DELETE FROM checkouts")
+    suspend fun deleteAll()
+
+    /** Inserts rows keeping their ids, so references between tables survive a restore. */
+    @Insert
+    suspend fun insertAll(rows: List<Checkout>)
 }

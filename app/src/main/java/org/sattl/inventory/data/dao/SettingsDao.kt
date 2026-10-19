@@ -17,4 +17,7 @@ interface SettingsDao {
 
     @Upsert
     suspend fun upsert(settings: AppSettings)
+
+    @Query("DELETE FROM app_settings")
+    suspend fun deleteAll()
 }

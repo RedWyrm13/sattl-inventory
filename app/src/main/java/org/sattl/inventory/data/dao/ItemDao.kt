@@ -55,4 +55,16 @@ interface ItemDao {
         """
     )
     fun observeInventoryRow(id: Long): Flow<InventoryRow?>
+
+    // --- Backup and restore (spec 7.1, 7.3) ---
+
+    @Query("SELECT * FROM items ORDER BY id")
+    suspend fun getAll(): List<Item>
+
+    @Query("DELETE FROM items")
+    suspend fun deleteAll()
+
+    /** Inserts rows keeping their ids, so references between tables survive a restore. */
+    @Insert
+    suspend fun insertAll(rows: List<Item>)
 }
