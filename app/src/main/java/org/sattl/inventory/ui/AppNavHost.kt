@@ -13,6 +13,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.sattl.inventory.AppContainer
 import org.sattl.inventory.session.SessionUser
+import org.sattl.inventory.ui.backup.BackupScreen
+import org.sattl.inventory.ui.backup.BackupViewModel
 import org.sattl.inventory.ui.checkout.CheckoutScreen
 import org.sattl.inventory.ui.checkout.CheckoutViewModel
 import org.sattl.inventory.ui.inventory.InventoryScreen
@@ -47,6 +49,7 @@ object Routes {
     const val USER_ADD = "user_add"
     const val USER_RESET_PIN = "user_reset_pin/{userId}"
     const val RECOVERY = "recovery"
+    const val BACKUP = "backup"
 
     fun userResetPin(userId: Long) = "user_reset_pin/$userId"
 
@@ -134,7 +137,7 @@ fun AppNavHost(
         composable(Routes.INVENTORY) {
             val current = user ?: return@composable
             val vm: InventoryViewModel = viewModel(factory = viewModelFactory {
-                initializer { InventoryViewModel(container.itemRepository, current) }
+                initializer { InventoryViewModel(container.itemRepository, container.backupRepository, current) }
             })
             InventoryScreen(
                 viewModel = vm,
@@ -144,6 +147,23 @@ fun AppNavHost(
                 onOpenItem = { navController.navigate(Routes.item(it)) },
                 onAddItem = { navController.navigate(Routes.itemForm(null)) },
                 onManageUsers = { navController.navigate(Routes.USERS) },
+                onBackup = { navController.navigate(Routes.BACKUP) },
+            )
+        }
+
+        composable(Routes.BACKUP) {
+            val current = user ?: return@composable
+            // Admin only (spec section 3, 7).
+            if (!current.isAdmin) return@composable
+            val vm: BackupViewModel = viewModel(factory = viewModelFactory {
+                initializer { BackupViewModel(container.backupRepository, current) }
+            })
+            BackupScreen(
+                viewModel = vm,
+                user = current,
+                onLogout = session::logout,
+                onChangePin = { navController.navigate(Routes.CHANGE_PIN) },
+                onBack = { navController.popBackStack() },
             )
         }
 

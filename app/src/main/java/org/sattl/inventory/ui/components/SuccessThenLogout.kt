@@ -31,10 +31,15 @@ const val SUCCESS_MESSAGE_MILLIS = 2_000L
  * so nothing is lost by the logout (rule 6.15).
  */
 @Composable
-fun SuccessThenLogout(title: String, detail: String, onLogout: () -> Unit) {
+fun SuccessThenLogout(
+    title: String,
+    detail: String,
+    onLogout: () -> Unit,
+    durationMillis: Long = SUCCESS_MESSAGE_MILLIS,
+) {
     val logout by rememberUpdatedState(onLogout)
     LaunchedEffect(Unit) {
-        delay(SUCCESS_MESSAGE_MILLIS)
+        delay(durationMillis)
         logout()
     }
     Box(

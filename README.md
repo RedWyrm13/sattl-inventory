@@ -3,10 +3,10 @@
 An offline Android tablet app that tracks the SATTL lab's equipment and who has it.
 The full build spec is [`SPEC.md`](SPEC.md). It always matches the app; see its change log (section 15).
 
-> **Status:** milestones 1–4 of 6 are done (project skeleton, database, first-time setup,
+> **Status:** milestones 1–5 of 6 are done (project skeleton, database, first-time setup,
 > login, Change PIN, auto-logout; inventory list, search, filters, item detail,
 > add / edit / retire items; check out and check in; user management and admin PIN
-> recovery). The step-by-step guide for non-developers (installing
+> recovery; full backup export, Export this view, and restore). The step-by-step guide for non-developers (installing
 > Android Studio, sideloading the APK, app pinning, updating without data loss, signing
 > key storage) will be written here as part of milestone 6.
 
@@ -34,6 +34,7 @@ app/src/main/java/org/sattl/inventory/
   data/db/               Database, type converters, migrations, extra SQL constraints
   data/model/            Query results that join tables (e.g. an item plus its open checkout)
   data/repo/             Business rules; the UI only talks to repositories
+  data/backup/           Backup ZIP format, CSV reader/writer, restore validation (spec §7)
   domain/                Pure rules with no database: item status, filters/search, validation
   security/              PIN hashing (PBKDF2), PIN rules, recovery code (spec §8)
   session/               Who is logged in; inactivity auto-logout (rule 6.14)

@@ -220,26 +220,28 @@ One ZIP file named `sattl-inventory-YYYY-MM-DD-HHMM.zip`, containing:
 | --- | --- |
 | items.csv | Every item, including retired ones, all fields including uuid |
 | checkouts.csv | Every checkout ever, open and closed, including uuid, with item tag and user names alongside the ids so it reads well in Excel |
-| users.csv | Every user: uuid, name, role, active flag, mustChangePin, PIN hash and salt (never plain PINs) |
+| users.csv | Every user: id, uuid, name, role, active flag, mustChangePin, PIN hash and salt (never plain PINs), failed attempts, lockout time, created time |
 | settings.csv | Recovery code hash and salt, keepScreenOn |
 | manifest.json | App version, schema version, export timestamp, row counts per file |
 
-CSV format: UTF-8 with a byte-order mark so Excel opens it correctly, comma-separated, a header row, values quoted where needed, dates as ISO 8601 (`2026-10-01` and `2026-10-01T14:30:00`).
+CSV format: UTF-8 with a byte-order mark so Excel opens it correctly, comma-separated, a header row, values quoted where needed, dates as ISO 8601 (`2026-10-01` and `2026-10-01T14:30:00.000-05:00`). Date-times are in the tablet's local time with milliseconds and the UTC offset, so a restore reproduces every timestamp exactly, even across daylight-saving changes. Empty values mean "none" (e.g. no serial number).
 
-After a successful export, lastExportAt is updated. If the last export is more than 30 days old (or never), the admin sees a banner on the Inventory screen: "Last backup: N days ago. Export now."
+After a successful export, lastExportAt is updated. If the last export is more than 30 days old (or never), the admin sees a banner on the Inventory screen: "Last backup: N days ago. Export now." (or "No backup has been made yet." when there has never been one). "Export now" opens the Export / Restore screen.
 
 ### 7.2 Export this view
 
-A single CSV of exactly what the Inventory list is showing (current filter and search). In the Checked out filter it includes the checkout columns: borrower, checkout date, expected return date, destination, reason.
+A single CSV of exactly what the Inventory list is showing (current filter and search), with the same columns: SATTL tag, manufacturer, model, serial, current location, status. In the Checked out and My checkouts filters it adds the checkout columns: borrower, checkout date, expected return date, destination, reason. File name: `sattl-inventory-view-<filter>-YYYY-MM-DD-HHMM.csv`.
 
 ### 7.3 Restore from full export
 
 1. Admin chooses Restore, then picks a ZIP from the USB drive.
-2. The app validates the file: manifest present, schema version supported, all CSVs parse, row counts match, references between tables are valid, no duplicate tags or names.
+2. The app validates the file: manifest present, schema version supported, all CSVs parse, row counts match, references between tables are valid, no duplicate tags or names. It also checks every value's type, that ids and UUIDs are unique, that there is exactly one admin, and that no item has more than one open checkout.
 3. If invalid, show what is wrong and change nothing.
 4. If valid, show a summary (item, checkout and user counts, export date) and a warning: "This replaces ALL data on this tablet." The admin confirms by entering their current PIN.
 5. The app replaces all data in a single transaction, so a failure leaves the old data intact.
-6. Everyone is logged out. Users, including the admin, log in with the PINs that were in effect when the backup was taken.
+6. Everyone is logged out. Users, including the admin, log in with the PINs that were in effect when the backup was taken. The admin recovery code also reverts to the one in effect then, and lastExportAt becomes the backup's export time.
+
+To restore onto a newly installed tablet, run first-time setup with any temporary admin name and PIN, then restore; the backup replaces the temporary admin.
 
 ### 7.4 Initial inventory load
 
@@ -366,3 +368,7 @@ This spec is kept in sync with the app. When a decision changes or an ambiguity 
 | 2026-10-16 | The admin's own PIN cannot be reset from Manage users; the admin uses Change PIN instead. *Agent's reading; awaiting lab manager confirmation.* | 5.9 |
 | 2026-10-16 | Reset PIN works for deactivated users. Deactivating someone who holds items explains why it is blocked without a confirmation dialog first. | 5.9 |
 | 2026-10-16 | Recovery saves the new PIN and code together only after "I have written this down" is ticked, and clears any admin lockout. | 5.10 |
+| 2026-10-19 | Export date-times include milliseconds and the UTC offset (e.g. `2026-10-01T14:30:00.123-05:00`) so restore is exact. *Agent's reading; awaiting lab manager confirmation.* | 7.1 |
+| 2026-10-19 | users.csv also carries id, failed attempts, lockout time and created time, so restore reproduces users exactly. | 7.1 |
+| 2026-10-19 | Export this view adds checkout columns in My checkouts too, matching the screen (confirmed rule in 5.4). | 7.2 |
+| 2026-10-19 | Restore also checks value types, unique ids/UUIDs, exactly one admin and one open checkout per item. Afterwards the recovery code is the backup's, and lastExportAt is the backup's export time. Restoring onto a new tablet: run setup with a temporary admin first. | 7.3 |

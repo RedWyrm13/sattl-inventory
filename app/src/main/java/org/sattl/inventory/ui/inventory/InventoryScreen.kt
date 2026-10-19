@@ -1,5 +1,7 @@
 package org.sattl.inventory.ui.inventory
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -15,12 +17,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -31,6 +35,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,13 +52,13 @@ import org.sattl.inventory.ui.components.AppTextField
 import org.sattl.inventory.ui.components.AppTopBar
 import org.sattl.inventory.ui.components.Dimens
 import org.sattl.inventory.ui.components.StatusBadge
+import org.sattl.inventory.util.Documents
 import org.sattl.inventory.util.Formats
 
 /**
  * Inventory home screen (spec 5.4).
  *
- * Still to come: "Export this view" and the remaining Admin menu entries (Export / Restore,
- * Settings, Exit kiosk) arrive with those features in milestones 5–6.
+ * Still to come: the Settings and Exit kiosk Admin menu entries arrive in milestone 6.
  */
 @Composable
 fun InventoryScreen(
@@ -63,12 +69,19 @@ fun InventoryScreen(
     onOpenItem: (Long) -> Unit,
     onAddItem: () -> Unit,
     onManageUsers: () -> Unit,
+    onBackup: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val exportViewLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+        if (uri != null) viewModel.exportView(Documents.displayName(context, uri)) { Documents.openForWriting(context, uri) }
+    }
 
     Column(Modifier.fillMaxSize()) {
         AppTopBar(user = user, onLogout = onLogout, onChangePin = onChangePin) {
-            if (user.isAdmin) AdminMenu(listOf(AdminMenuEntry("Users", onManageUsers)))
+            if (user.isAdmin) {
+                AdminMenu(listOf(AdminMenuEntry("Users", onManageUsers), AdminMenuEntry("Export / Restore", onBackup)))
+            }
         }
         Column(
             Modifier
@@ -76,6 +89,11 @@ fun InventoryScreen(
                 .padding(horizontal = Dimens.ScreenPadding, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // Spec 7.1: admin reminder when the last backup is over 30 days old, or never made.
+            state.backupReminder?.let { text ->
+                Notice(text, actionLabel = "Export now", onAction = onBackup, warning = true)
+            }
+            state.message?.let { Notice(it, actionLabel = "OK", onAction = viewModel::dismissMessage) }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 AppTextField(
                     value = state.search,
@@ -93,6 +111,11 @@ fun InventoryScreen(
                     modifier = Modifier.weight(1f),
                 )
                 if (user.isAdmin) {
+                    // Spec 7.2: a CSV of exactly the list below.
+                    OutlinedButton(
+                        onClick = { exportViewLauncher.launch(viewModel.viewFileName()) },
+                        modifier = Modifier.heightIn(min = Dimens.TouchTarget),
+                    ) { Text("Export this view") }
                     Button(onClick = onAddItem, modifier = Modifier.heightIn(min = Dimens.TouchTarget)) {
                         Icon(Icons.Default.Add, contentDescription = null)
                         Text("Add item", modifier = Modifier.padding(start = 8.dp))
@@ -230,5 +253,23 @@ private fun RowScope.Cell(text: String, weight: Float, bold: Boolean = false, de
 private fun EmptyMessage(text: String) {
     Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.TopCenter) {
         Text(text, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** A one-line notice above the list with an action button, e.g. the backup reminder. */
+@Composable
+private fun Notice(text: String, actionLabel: String, onAction: () -> Unit, warning: Boolean = false) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(
+                if (warning) Color(0xFFFFE08A) else MaterialTheme.colorScheme.primaryContainer,
+                RoundedCornerShape(12.dp),
+            )
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        OutlinedButton(onClick = onAction, modifier = Modifier.heightIn(min = Dimens.TouchTarget)) { Text(actionLabel) }
     }
 }
